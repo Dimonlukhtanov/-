@@ -1,0 +1,30 @@
+<?php    
+//Hello World
+$i = readline("i=");
+$a = 44;
+<;    
+$b = "Hi";
+;^
+###№@~брррря\
+$c = $a *
+$int_10 = 28; /* десятичное число */
+$int_2 = 0b11100; // двоичное число
+$int_8 = 034; // восьмеричное число
+$int_16 = 0x1C; // шестнадцатеричное число
+$int_0 = 0;
+$c = $a ** 5;
+echo 'Hello www';
+$arr = array(
+    "foo" = "bar"
+)
+if (i > 0)
+then {
+    echo 'Hello World!;
+} else {
+    echo $i;
+}
+/*Hello
+111
+World*/
+$i = $a * 2;
+?>

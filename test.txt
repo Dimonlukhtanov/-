@@ -1,0 +1,66 @@
+<?php 
+$q = 180;
+$b = 336;
+while ($q != $b){
+    if ($q > $b){
+        $q = $q - $b;
+    }
+    else {
+        $b = $b - $q;
+    }
+}
+echo $b;
+/* gg */
+
+$arr = array(12, 4, 182, 14, 2);
+$min = $arr[0];
+$c = 0;
+
+while($c < 5) {
+    if($arr[$c] < $min){
+        $min = $arr[$c];
+    }
+    $c = $c + 1;
+}
+
+echo "Min value: $min";
+
+////////
+$i = 0;
+$j = 0;
+$n = 0;
+$k = 0;
+$a = 0;
+$str = readline("String: ");
+$findstr = readline("Substring: ");
+while($str[$n] != ''){
+    $n = $n + 1;
+}
+
+while($findstr[$k] != ''){
+    $k = $k + 1;
+}
+
+while($i < $n && $j < $k){
+    if ($str[$i] == $findstr[$j]){
+        if ($j == 0){
+            $a = $i;
+        }
+        $i = $i + 1;
+        $j = $j + 1;        
+    }
+    else {
+        $a = 0;
+        $i = $i + 1;
+        $j = 0;
+    }
+}
+
+if ($j == $k) {
+    echo "First input on index $a\n";
+}
+
+else {
+    echo "String not found";
+}
+?>
