@@ -129,6 +129,8 @@ void createBox(struct AST* Node) {
 
 	if (Node->Token != NULL) {
 		printf("\\nlexeme=%s", Node->Token->lexeme);
+		if (Node->value != NULL)
+			printf("\\nvalue=%s", Node->value);
 	}
 	
 	printf("\"]\n");

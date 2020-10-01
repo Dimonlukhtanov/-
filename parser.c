@@ -17,7 +17,9 @@ void Start(Parse* parse) {
 	setString(StartNode, "start");
 	parse->root = StartNode;
 	match("start");
+
 	StList(StartNode);
+
 	match("end");
 }
 
@@ -30,11 +32,11 @@ void StList(struct AST* StartNode) {
 		print(printNode);
 		StList(StartNode);
 	} else if (strcmp(parse->lookahead->token, "var") == 0) {
-		struct AST* varNode = initASTNode();
-		setString(varNode, "var");
-		add_child(varNode, StartNode);
+		//struct AST* varNode = initASTNode();
+		//setString(varNode, "var");
+		//add_child(varNode, StartNode);
 
-		initi(varNode);
+		initi(StartNode);
 		StList(StartNode);
 	} else if (strcmp(parse->lookahead->token, "if") == 0) {
 		ifstmt(StartNode);
@@ -42,10 +44,7 @@ void StList(struct AST* StartNode) {
 	} else if (strcmp(parse->lookahead->token, "while") == 0) {
 		While(StartNode);
 		StList(StartNode);
-	} /*else if (strcmp(parse->lookahead->token, "do") == 0) {
-		dowhile(StartNode);
-		StList(StartNode);
-	}*/
+	}
 }
 
 void semiid(struct AST* node) {
@@ -69,16 +68,16 @@ void print(struct AST *node) {
 		match("var");
 		struct AST *idNode = initASTNode();
 		setString(idNode, "var");
-		//setToken(idNode, parse->lookahead);
+		setToken(idNode, getLookahead());
 		add_child(idNode, node);
-		id_or_sign_number(node);
-		//match ("id");
+
+		match ("id");
 		match("semi");
-	} else if (strcmp(parse->lookahead->token, "stringliteral") == 0) {
+	} else if (strcmp(parse->lookahead->token, "literal") == 0) {
+		match("literal");
 		struct AST* literalNode = initASTNode();
-		setString(literalNode, "stringliteral");
+		setString(literalNode, "literal");
 		add_child(literalNode, node);
-		match("stringliteral");
 		match("semi");
 	} else {
 		printf("error: %d:%d: expecting id or literal, find %s\n",
@@ -90,57 +89,74 @@ void print(struct AST *node) {
 void initi(struct AST* node) {
 	match("var");
 	struct AST *idNode = initASTNode();
-	setString(idNode, parse->lookahead->token);
-	setToken(idNode, parse->lookahead);
+	//setString(idNode, parse->lookahead->token);
+	setToken(idNode, getLookahead());
+	//idNode->type = 1;
 	add_child(idNode, node);
 	match("id");
-	if (strcmp(parse->lookahead->token, "sq_l_paren") == 0) {
-		match("sq_l_paren");
-		sign_number(node);
-		match("sq_r_paren");
-	} else
-		varorarr(node);
+	varorarr(node);
+}
+
+void type(struct AST* node) {
+	int TypeNode;
+	if (strcmp(parse->lookahead->token, "numeric16") == 0 ||
+		(strcmp(parse->lookahead->token, "numeric10") == 0) ||
+		(strcmp(parse->lookahead->token, "numeric8") == 0) ||
+			(strcmp(parse->lookahead->token, "numeric2") == 0)) {
+		//match("integer");
+		TypeNode = 1;
+	} else if (strcmp(parse->lookahead->token, "stringliteral") == 0) {
+		//match("string");
+		TypeNode = 2;
+	}
+	struct child* Node = node->children;
+	while (Node != NULL) {
+		Node->Node->type = TypeNode;
+		Node = Node->next;
+	}
 }
 
 void varorarr(struct AST* node) {
-	int TypeNode;
+	//int TypeNode;
 	if (strcmp(parse->lookahead->token, "equal") == 0) {
+		struct AST *child = getLastChild(node);
+		setString(child, "var");
+		struct AST* AssignNode = initASTNode();
+		setString(AssignNode, "assign");
+		swapChild(node, AssignNode);
 		match("equal");
-		/*if (strcmp(parse->lookahead->token, "id") == 0) {
+		type(AssignNode);
+		term(AssignNode);
+		match("semi");
+		/*if (strcmp(parse->lookahead->token, "id") == 0){
 			struct AST *child = getLastChild(node);
 			setString(child, "id");
-		} else */if (strcmp(parse->lookahead->token, "input") == 0) {
+		} else if (strcmp(parse->lookahead->token, "input") == 0){
 			struct AST* inputNode = initASTNode();
 			setString(inputNode, "input");
 			add_child(inputNode, getLastChild(node));
 
 			match("input");
 			input(inputNode);
-		} else if (strcmp(parse->lookahead->token, "var") == 0) {
-
+		} else if (strcmp(parse->lookahead->token, "var") == 0){
+			match ("var");
+			id_or_sign_number(node);
 			struct AST* AssignNode = initASTNode();
 			setString(AssignNode, "assign");
-			add_child(AssignNode, node);		
-			match ("var");
-
-			struct AST* varNode = initASTNode();
-			setString(varNode, "var");
-			//setToken(varNode, parse->lookahead);
-			//swapChild(node, AssignNode);
-			//setToken(varNode, parse->lookahead);
-
-			add_child(varNode, AssignNode);
-		    id_or_sign_number(AssignNode);
-			if (strcmp(parse->lookahead->token, "sq_l_paren") == 0) {
-				match("sq_l_paren");
-				sign_number(node);
-				match("sq_r_paren");
-			}
+			swapChild(node, AssignNode);
 			term(AssignNode);
-
-		} else if (strcmp(parse->lookahead->token, "numeric16") == 0) {
-			match("numeric16");
-			if (strcmp(parse->lookahead->token, "semi") == 0) {
+		} else if (strcmp(parse->lookahead->token, "numeric10") == 0){
+			struct AST* AssignNode = initASTNode();
+			setString(AssignNode, "assign");
+			swapChild(node, AssignNode);
+			//add_child(AssignNode, getLastChild(node));
+			//struct AST* numNode = initASTNode();
+			//setString(numNode, "numeric10");
+			//setToken(numNode, parse->lookahead);
+			//add_child(numNode, getLastChild(node));
+			//match("numeric10");
+			term(AssignNode);
+			if(strcmp(parse->lookahead->token, "semi") == 0){
 				TypeNode = 1;
 				struct child* Node = node->children;
 				while (Node != NULL) {
@@ -155,60 +171,8 @@ void varorarr(struct AST* node) {
 				term(AssignNode);
 				match("semi");
 			}
-		} else if (strcmp(parse->lookahead->token, "numeric10") == 0) {
-			match("numeric10");
-			//litornum(node);
-			if (strcmp(parse->lookahead->token, "semi") == 0) {
-				TypeNode = 1;
-				struct child* Node = node->children;
-				while (Node != NULL) {
-					Node->Node->type = TypeNode;
-					Node = Node->next;
-				}
-				match("semi");
-			} else {
-				struct AST* AssignNode = initASTNode();
-				setString(AssignNode, "assign");
-				swapChild(node, AssignNode);
-				term(AssignNode);
-				match("semi");
-			}
-		} else if (strcmp(parse->lookahead->token, "numeric8") == 0) {
-			match("numeric8");
-			if (strcmp(parse->lookahead->token, "semi") == 0) {
-				TypeNode = 1;
-				struct child* Node = node->children;
-				while (Node != NULL) {
-					Node->Node->type = TypeNode;
-					Node = Node->next;
-				}
-				match("semi");
-			} else {
-				struct AST* AssignNode = initASTNode();
-				setString(AssignNode, "assign");
-				swapChild(node, AssignNode);
-				term(AssignNode);
-				match("semi");
-			}
-		} else if (strcmp(parse->lookahead->token, "numeric2") == 0) {
-			match("numeric2");
-			if (strcmp(parse->lookahead->token, "semi") == 0) {
-				TypeNode = 1;
-				struct child* Node = node->children;
-				while (Node != NULL) {
-					Node->Node->type = TypeNode;
-					Node = Node->next;
-				}
-				match("semi");
-			} else {
-				struct AST* AssignNode = initASTNode();
-				setString(AssignNode, "assign");
-				swapChild(node, AssignNode);
-				term(AssignNode);
-				match("semi");
-			}
-		} else if (strcmp(parse->lookahead->token, "stringliteral") == 0) {
-			match("stringliteral");
+		} else if (strcmp(parse->lookahead->token, "literal") == 0){
+			match("literal");
 			TypeNode = 2;
 			struct child* Node = node->children;
 			while (Node != NULL) {
@@ -220,13 +184,13 @@ void varorarr(struct AST* node) {
 			match("array");
 			match("l_paren");
 			struct AST* arrayNode = getLastChild(node);
-			setString(arrayNode, "array");
+			setString(arrayNode, "arr");
+			arrayNode->type = 3;
 			litornum(arrayNode);
 			match("r_paren");
-			match("semi");
-		}
+		}*/
 	} else {
-		printf("error: %d:%d: expecting id/equal/num/lit or input or array, find %s\n",
+		printf("error: %d:%d: expecting id/num/lit or input or array, find %s\n",
 		       parse->lookahead->row, parse->lookahead->column, parse->lookahead->token);
 		exit(1);
 	}
@@ -234,7 +198,7 @@ void varorarr(struct AST* node) {
 
 void litornum(struct AST* node) {
 	int TypeNode;
-	/*if (strcmp(parse->lookahead->token, "stringliteral") == 0) {
+	if (strcmp(parse->lookahead->token, "literal") == 0) {
 		struct AST *idNode = initASTNode();
 		setString(idNode, "id");
 		add_child(idNode, node);
@@ -244,7 +208,7 @@ void litornum(struct AST* node) {
 			Node->Node->type = TypeNode;
 			Node = Node->next;
 		}
-		match("stringliteral");
+		match("literal");
 		if (strcmp(parse->lookahead->token, "equal") == 0) {
 			match ("equal");
 			if (strcmp(parse->lookahead->token, "numeric10") == 0) {
@@ -258,12 +222,12 @@ void litornum(struct AST* node) {
 					Node = Node->next;
 				}
 				match("numeric10");
-			} 
-			else if (strcmp(parse->lookahead->token, "stringliteral") == 0) {
+			} else if (strcmp(parse->lookahead->token, "literal") == 0) {
 				struct AST *literalNode = initASTNode();
-				setString(literalNode, "stringliteral");
+				setString(literalNode, "literal");
+				//literalNode->type = 2;
 				add_child(literalNode, node);
-				match("stringliteral");
+				match("literal");
 				TypeNode = 2;
 				struct child* Node = node->children;
 				while (Node != NULL) {
@@ -272,66 +236,6 @@ void litornum(struct AST* node) {
 				}
 			}
 		}
-	} else 	*/if (strcmp(parse->lookahead->token, "numeric16") == 0) {
-		struct AST *numNode = initASTNode();
-		setString(numNode, "numeric16");
-		add_child(numNode, node);
-		TypeNode = 1;
-		struct child* Node = node->children;
-		while (Node != NULL) {
-			Node->Node->type = TypeNode;
-			Node = Node->next;
-		}
-		match("numeric16");
-		if (strcmp(parse->lookahead->token, "comma") == 0) {
-			match("comma");
-			litornum(node);
-		}
-	} else 	if (strcmp(parse->lookahead->token, "numeric10") == 0) {
-		struct AST *numNode = initASTNode();
-		setString(numNode, "numeric10");
-		add_child(numNode, node);
-		TypeNode = 1;
-		struct child* Node = node->children;
-		while (Node != NULL) {
-			Node->Node->type = TypeNode;
-			Node = Node->next;
-		}
-		match("numeric10");
-		if (strcmp(parse->lookahead->token, "comma") == 0) {
-			match("comma");
-			litornum(node);
-		}
-	} else 	if (strcmp(parse->lookahead->token, "numeric8") == 0) {
-		struct AST *numNode = initASTNode();
-		setString(numNode, "numeric8");
-		add_child(numNode, node);
-		TypeNode = 1;
-		struct child* Node = node->children;
-		while (Node != NULL) {
-			Node->Node->type = TypeNode;
-			Node = Node->next;
-		}
-		match("numeric8");
-		if (strcmp(parse->lookahead->token, "comma") == 0) {
-			match("comma");
-			litornum(node);
-		}
-	} else 	if (strcmp(parse->lookahead->token, "numeric2") == 0) {
-		struct AST *numNode = initASTNode();
-		setString(numNode, "numeric2");
-		add_child(numNode, node);
-		TypeNode = 1;
-		struct child* Node = node->children;
-		while (Node != NULL) {
-			Node->Node->type = TypeNode;
-			Node = Node->next;
-		}
-		match("numeric2");
-		if (strcmp(parse->lookahead->token, "comma") == 0) {
-			match("comma");
-			litornum(node);
-		}
 	} else {
 		printf("error: %d:%d: expecting id or numeric, find %s\n",
 		       parse->lookahead->row, parse->lookahead->column, parse->lookahead->token);
@@ -339,23 +243,23 @@ void litornum(struct AST* node) {
 	}
 }
 
-void input(struct AST * inputNode) {
+void input(struct AST* inputNode) {
 	match("l_paren");
-	if (strcmp(parse->lookahead->token, "stringliteral") == 0) {
+	if (strcmp(parse->lookahead->token, "literal") == 0) {
 		struct AST* printNode = initASTNode();
-		setString(printNode, "print_sringliteral");
+		setString(printNode, "print");
 		add_child(printNode, inputNode);
-		/*struct AST* literalNode = initASTNode();
-		setString(literalNode, "stringliteral");
-		add_child(literalNode, printNode);*/
+		struct AST* literalNode = initASTNode();
+		setString(literalNode, "literal");
+		add_child(literalNode, printNode);
 
-		match("stringliteral");
+		match("literal");
 	} else if (strcmp(parse->lookahead->token, "r_paren") == 0) {
 		match("r_paren");
 		match("semi");
 	}
 	else {
-		printf("error: %d:%d: expecting " " or ' ' or literal, find %s\n",
+		printf("error: %d:%d: expecting " " or literal, find %s\n",
 		       parse->lookahead->row, parse->lookahead->column, parse->lookahead->token);
 		exit(1);
 	}
@@ -363,16 +267,16 @@ void input(struct AST * inputNode) {
 	match("semi");
 }
 
-void term(struct AST * node) {
+void term(struct AST* node) {
 	add_prior1(node);
 }
 
-void add_prior1(struct AST * node) {
+void add_prior1(struct AST* node) {
 	mult_prior1(node);
 	add_prior2(node);
 }
 
-void add_prior2(struct AST * node) {////////
+void add_prior2(struct AST* node) {
 	if ((strcmp(parse->lookahead->token, "plus") == 0) ||
 	        (strcmp(parse->lookahead->token, "minus") == 0)) {
 		struct AST *operNode = initASTNode();
@@ -385,16 +289,14 @@ void add_prior2(struct AST * node) {////////
 	}
 }
 
-void mult_prior1(struct AST * node) {
+void mult_prior1(struct AST* node) {
 	group(node);
 	mult_prior2(node);
 }
 
-void mult_prior2(struct AST * node) {
-	if ((strcmp(parse->lookahead->token, "pow") == 0) ||
-		(strcmp(parse->lookahead->token, "multiply") == 0) ||
-	        (strcmp(parse->lookahead->token, "divide") == 0) ||
-	        (strcmp(parse->lookahead->token, "mod") == 0)) {
+void mult_prior2(struct AST* node) {
+	if ((strcmp(parse->lookahead->token, "multiply") == 0) ||
+	        (strcmp(parse->lookahead->token, "divide") == 0)) {
 		struct AST *operNode = initASTNode();
 		setString(operNode, parse->lookahead->token);
 		swapChild(node, operNode);
@@ -404,147 +306,134 @@ void mult_prior2(struct AST * node) {
 		mult_prior2(node);
 	}
 	else {
-		match("semi");
+		//match("semi");
 	}
 }
 
-void group(struct AST * node) {
+void group(struct AST* node) {
 	if (strcmp(parse->lookahead->token, "l_paren") == 0) {
 		match ("l_paren");
 		term(node);
 		match ("r_paren");
-	} else if ((strcmp(parse->lookahead->token, "id") == 0) ||
-		(strcmp(parse->lookahead->token, "pow") == 0) ||
-		(strcmp(parse->lookahead->token, "multiply") == 0) ||
-		(strcmp(parse->lookahead->token, "divide") == 0) ||
-		(strcmp(parse->lookahead->token, "mod") == 0) ||
-		(strcmp(parse->lookahead->token, "plus") == 0) ||
-	    (strcmp(parse->lookahead->token, "minus") == 0) ||
-	    (strcmp(parse->lookahead->token, "numeric16") == 0) ||
-	    (strcmp(parse->lookahead->token, "numeric10") == 0) ||
-	    (strcmp(parse->lookahead->token, "numeric8") == 0) ||
-	    (strcmp(parse->lookahead->token, "numeric2") == 0) ) {
+	} else if ((strcmp(parse->lookahead->token, "var") == 0) ||
+	           (strcmp(parse->lookahead->token, "plus") == 0) ||
+	           (strcmp(parse->lookahead->token, "minus") == 0) ||
+	           (strcmp(parse->lookahead->token, "numeric10") == 0)) {
 		id_or_sign_number(node);
 	}
 }
 
-void mult_prior_oper(struct AST * node) {
-	if (strcmp(parse->lookahead->token, "pow")) {
-	 	match ("pow");
-	} else if (strcmp(parse->lookahead->token, "multiply") == 0) {
+void mult_prior_oper(struct AST* node) {
+	if (strcmp(parse->lookahead->token, "multiply") == 0) {
 		match ("multiply");
 	} else if (strcmp(parse->lookahead->token, "divide") == 0) {
 		match("divide");
-	} else if (strcmp(parse->lookahead->token, "mod") == 0) {
-		match ("mod");
-	}/* else {
+	}  else {
 		printf("error: %d:%d: expecting multiply or divide, find %s\n",
 		       parse->lookahead->row, parse->lookahead->column, parse->lookahead->token);
 		exit(1);
-	}*/
+	}
 }
 
-void add_prior_oper(struct AST * node) {
+void add_prior_oper(struct AST* node) {
 	if (strcmp(parse->lookahead->token, "plus") == 0) {
 		match ("plus");
 	} else if (strcmp(parse->lookahead->token, "minus") == 0) {
 		match("minus");
-	}/*  else {
+	}  else {
 		printf("error: %d:%d: expecting plus or minus, find %s\n",
 		       parse->lookahead->row, parse->lookahead->column, parse->lookahead->token);
 		exit(1);
-	}*/
+	}
 }
 
-void id_or_sign_number(struct AST * node) {
-	if (strcmp(parse->lookahead->token, "id") == 0) {
+void id_or_sign_number(struct AST* node) {
+	if (strcmp(parse->lookahead->token, "var") == 0) {
 		struct AST *idNode = initASTNode();
-		setString(idNode, parse->lookahead->token);
+		match("var");
+		setString(idNode, "var");
+		//idNode->type = 1;
 		setToken(idNode, parse->lookahead);
 		add_child(idNode, node);
-
 		match ("id");
-		if (strcmp(parse->lookahead->token, "sq_l_paren") == 0) {
-			match("sq_l_paren");
-			sign_number(node);
-			match("sq_r_paren");
-		}
-	} else if ((strcmp(parse->lookahead->token, "pow") == 0) ||
-		(strcmp(parse->lookahead->token, "multiply") == 0) ||
-		(strcmp(parse->lookahead->token, "divide") == 0) ||
-		(strcmp(parse->lookahead->token, "mod") == 0) ||
-		(strcmp(parse->lookahead->token, "plus") == 0) ||
-	    (strcmp(parse->lookahead->token, "minus") == 0) ||
-	    (strcmp(parse->lookahead->token, "numeric16") == 0) ||
-	    (strcmp(parse->lookahead->token, "numeric10") == 0) ||
-	    (strcmp(parse->lookahead->token, "numeric8") == 0) ||
-	    (strcmp(parse->lookahead->token, "numeric2") == 0)) {
+	} else if ((strcmp(parse->lookahead->token, "plus") == 0) ||
+	           (strcmp(parse->lookahead->token, "minus") == 0) ||
+	           (strcmp(parse->lookahead->token, "numeric16") == 0) ||
+	           (strcmp(parse->lookahead->token, "numeric10") == 0) ||
+	           (strcmp(parse->lookahead->token, "numeric8") == 0) ||
+	           (strcmp(parse->lookahead->token, "numeric2") == 0)) {
+
 		sign_number(node);
-	} else {
-		printf("error: %d:%d: expecting id or arithmetic operations or numeric, find %s\n",
+	}  else {
+		printf("error: %d:%d: expecting id or plus or minus or numeric, find %s\n",
 		       parse->lookahead->row, parse->lookahead->column, parse->lookahead->token);
 		exit(1);
 	}
 }
 
-void sign_number(struct AST * node) {
-	if ((strcmp(parse->lookahead->token, "pow") == 0) ||
-		(strcmp(parse->lookahead->token, "multiply") == 0) ||
-		(strcmp(parse->lookahead->token, "divide") == 0) ||
-		(strcmp(parse->lookahead->token, "mod") == 0) ||
-	    (strcmp(parse->lookahead->token, "var") == 0) ||
-	    (strcmp(parse->lookahead->token, "plus") == 0) ||
-	    (strcmp(parse->lookahead->token, "minus") == 0) ||
-	   	(strcmp(parse->lookahead->token, "numeric16") == 0) ||
-	    (strcmp(parse->lookahead->token, "numeric10") == 0) ||
-	    (strcmp(parse->lookahead->token, "numeric8") == 0) ||
-	    (strcmp(parse->lookahead->token, "numeric2") == 0)) {
-		sign(node);///////////
-		if ((strcmp(parse->lookahead->token, "var") == 0)) {
-			match("var");
-			struct AST *varNode = initASTNode();
-			setString(varNode, "var");
-			add_child(varNode, node);
-			id_or_sign_number(node);
-		} else {
-			if (strcmp(parse->lookahead->token, "numeric16") == 0) 
-				match("numeric16");
-			else if (strcmp(parse->lookahead->token, "numeric10") == 0){
-				match("numeric10");
-			}
-			else if (strcmp(parse->lookahead->token, "numeric8") == 0)
-				match("numeric8");
-			else if (strcmp(parse->lookahead->token, "numeric2") == 0)
-				match("numeric2");
-		}
+void method_or_array(struct AST* node) {
+	if (strcmp(parse->lookahead->token, "l_paren") == 0) {
+		match("l_paren");
+		pass_arg(node);
+		match("r_paren");
+	}
+}
+void pass_arg(struct AST* node) {
+	if ((strcmp(parse->lookahead->token, "l_paren") == 0) ||
+	        (strcmp(parse->lookahead->token, "id") == 0) ||
+	        (strcmp(parse->lookahead->token, "plus") == 0) ||
+	        (strcmp(parse->lookahead->token, "minus") == 0) ||
+	        (strcmp(parse->lookahead->token, "numeric16") == 0) ||
+	        (strcmp(parse->lookahead->token, "numeric10") == 0) ||
+	        (strcmp(parse->lookahead->token, "numeric8") == 0) ||
+	        (strcmp(parse->lookahead->token, "numeric2") == 0)) {
+		term(node);
+		tail_pass_arg(node);
+	}
+}
+
+void tail_pass_arg(struct AST* node) {
+	if (strcmp(parse->lookahead->token, "comma") == 0) {
+		match("comma");
+		term(node);
+		tail_pass_arg(node);
+	}
+}
+
+void sign_number(struct AST* node) {
+	if ((strcmp(parse->lookahead->token, "plus") == 0) ||
+	        (strcmp(parse->lookahead->token, "minus") == 0)) {
+		sign(node);
+
+	} else if (strcmp(parse->lookahead->token, "numeric16") == 0 ||
+	           (strcmp(parse->lookahead->token, "numeric10") == 0) ||
+	           (strcmp(parse->lookahead->token, "numeric8") == 0) ||
+	           (strcmp(parse->lookahead->token, "numeric2") == 0)) {
+		struct AST *numNode = initASTNode();
+		setString(numNode, parse->lookahead->token);
+		setToken(numNode, parse->lookahead);
+		add_child(numNode, node);
+
+		match(parse->lookahead->token);
 	} else {
-		printf("error: %d:%d: expecting arithmetic operations, find %s\n",
+		printf("error: %d:%d: expecting plus or minus or numeric, find %s\n",
 		       parse->lookahead->row, parse->lookahead->column, parse->lookahead->token);
 		exit(1);
 	}
 }
 
-void sign(struct AST * node) {
-	struct AST *operNode = initASTNode();
-	setString(operNode, parse->lookahead->token);
-	add_child(operNode, node);
-	if (strcmp(parse->lookahead->token, "pow") == 0) {
-		match("pow");
-	} else if (strcmp(parse->lookahead->token, "multiply") == 0){
-		match("multiply");
-	} else if (strcmp(parse->lookahead->token, "divide") == 0){
-		match("divide");
-	} else if (strcmp(parse->lookahead->token, "mod") == 0){
-		match("mod");
-	} else if (strcmp(parse->lookahead->token, "plus") == 0){
+void sign(struct AST* node) {
+	struct AST *numNode = initASTNode();
+	setString(numNode, parse->lookahead->token);
+	//setToken(numNode, parse->lookahead);
+	add_child(numNode, node);
+	if (strcmp(parse->lookahead->token, "plus") == 0) {
 		match("plus");
-	} else if (strcmp(parse->lookahead->token, "minus") == 0){
+	} else if (strcmp(parse->lookahead->token, "minus") == 0)
 		match("minus");
-	}
-
 }
 
-void ifstmt(struct AST * StartNode)
+void ifstmt(struct AST* StartNode)
 {
 	match("if");
 	struct AST *ifNode = initASTNode();
@@ -552,11 +441,12 @@ void ifstmt(struct AST * StartNode)
 	add_child(ifNode, StartNode);
 
 	struct AST *exprNode = initASTNode();
-	setString(exprNode, "expression");
+	setString(exprNode, "expr");
 	add_child(exprNode, ifNode);
 
 	expression(exprNode);
 
+	//match("bodyIf");
 	struct AST *thenNode = initASTNode();
 	setString(thenNode, "bodyIf");
 	add_child(thenNode, ifNode);
@@ -567,21 +457,22 @@ void ifstmt(struct AST * StartNode)
 	}
 	match("close");
 	if (strcmp(parse->lookahead->token, "else") == 0) {
-		match("else");
-		struct AST *elseNode = initASTNode();
-		setString(elseNode, "else");
-		add_child(elseNode, ifNode);
-		match("open");
 
-		while (strcmp(parse->lookahead->token, "close") != 0) {
-			StList(elseNode);
-		}
-		match("close");
+	match("else");
+	struct AST *elseNode = initASTNode();
+	setString(elseNode, "else");
+	add_child(elseNode, ifNode);
+	match("open");
+
+	while (strcmp(parse->lookahead->token, "close") != 0) {
+		StList(elseNode);
+	}
+	match("close");
 	}
 	StList(StartNode);
 }
 
-void expression(struct AST * node) {
+void expression(struct AST* node) {
 	if ((strcmp(parse->lookahead->token, "l_paren") == 0)) {
 		match("l_paren");
 		if ((strcmp(parse->lookahead->token, "var") == 0) ||
@@ -616,25 +507,21 @@ void expression(struct AST * node) {
 	}
 }
 
-void first_prior_expr1(struct AST * node) {
+void first_prior_expr1(struct AST* node) {
 	group_expr(node);
 	first_prior_expr2(node);
 }
 
-void first_prior_expr2(struct AST * node) {
+void first_prior_expr2(struct AST* node) {
 	if ((strcmp(parse->lookahead->token, "less") == 0) ||
-		(strcmp(parse->lookahead->token, "more") == 0) ||
-		(strcmp(parse->lookahead->token, "double_equal") == 0) ||
-		(strcmp(parse->lookahead->token, "negation") == 0) ||
-		(strcmp(parse->lookahead->token, "equal") == 0) ||
-	    (strcmp(parse->lookahead->token, "not_equal") == 0) ||
-	    (strcmp(parse->lookahead->token, "less_or_equal") == 0) ||
-	    (strcmp(parse->lookahead->token, "more_or_equal") == 0) ||
-		(strcmp(parse->lookahead->token, "and&&") == 0) ||
-		(strcmp(parse->lookahead->token, "or||") == 0) ||
-		(strcmp(parse->lookahead->token, "and") == 0) ||
-		(strcmp(parse->lookahead->token, "xor") == 0) ||
-		(strcmp(parse->lookahead->token, "or") == 0)) {
+	        (strcmp(parse->lookahead->token, "more") == 0) ||
+	        (strcmp(parse->lookahead->token, "double_equal") == 0) ||
+	        (strcmp(parse->lookahead->token, "not_equal") == 0) ||
+	        (strcmp(parse->lookahead->token, "less_or_equal") == 0) ||
+	        (strcmp(parse->lookahead->token, "more_or_equal") == 0) ||
+	        (strcmp(parse->lookahead->token, "and") == 0) ||
+	        (strcmp(parse->lookahead->token, "xor") == 0) ||
+	        (strcmp(parse->lookahead->token, "or") == 0)) {
 		struct AST *conditionNode = initASTNode();
 		setString(conditionNode, parse->lookahead->token);
 		swapChild(node, conditionNode);
@@ -645,60 +532,45 @@ void first_prior_expr2(struct AST * node) {
 	}
 }
 
-void group_expr (struct AST * node) {
-	if (strcmp(parse->lookahead->token, "var") == 0) {
-		match("var");
-	struct AST *varNode = initASTNode();
-	setString(varNode, "var");
-	add_child(varNode, node);
-	id_or_sign_number(node);
-	} else if (strcmp(parse->lookahead->token, "numeric16") == 0 ||
-		(strcmp(parse->lookahead->token, "numeric10") == 0) ||
-		(strcmp(parse->lookahead->token, "numeric8") == 0) ||
-		(strcmp(parse->lookahead->token, "numeric2") == 0)) {
-		sign_number(node);
-	} else if (strcmp(parse->lookahead->token, "stringliteral")) {
-		match("stringliteral");//////
-		struct AST *strNode = initASTNode();
-		setString(strNode, "stringliteral");
-		add_child(strNode, node);
-	} else if (strcmp(parse->lookahead->token, "r_paren") == 0) {
+void group_expr (struct AST* node) {
+	if (strcmp(parse->lookahead->token, "l_paren") == 0) {
+		match("l_paren");
+		if (strcmp(parse->lookahead->token, "var") == 0)
+			id_or_sign_number(node);
+	} else if (strcmp(parse->lookahead->token, "var") == 0) {
+		id_or_sign_number(node);
+	} else if (strcmp(parse->lookahead->token, "numeric10") == 0) {
+		id_or_sign_number(node);
+		//match("r_paren");
+	} else if (strcmp(parse->lookahead->token, "r_paren") == 0)
 		match("r_paren");
-	}
+
 }
 
-void condition(struct AST * node) {
-	if (strcmp(parse->lookahead->token, "less") == 0) 
+void condition(struct AST* node) {
+	if (strcmp(parse->lookahead->token, "less") == 0) {
 		match("less");
-	else if (strcmp(parse->lookahead->token, "more") == 0) 
+	} else if (strcmp(parse->lookahead->token, "more") == 0) {
 		match("more");
-	else if (strcmp(parse->lookahead->token, "double_equal") == 0) 
+	} else if (strcmp(parse->lookahead->token, "double_equal") == 0) {
 		match("double_equal");
-	else if (strcmp(parse->lookahead->token, "negation") == 0) 
-		match("negation");
-	else if (strcmp(parse->lookahead->token, "equal") == 0) 
-		match("equal");
-	else if (strcmp(parse->lookahead->token, "not_equal") == 0) 
+	} else if (strcmp(parse->lookahead->token, "not_equal") == 0) {
 		match("not_equal");
-	else if (strcmp(parse->lookahead->token, "less_or_equal") == 0) 
+	} else if (strcmp(parse->lookahead->token, "less_or_equal") == 0) {
 		match("less_or_equal");
-	else if (strcmp(parse->lookahead->token, "more_or_equal") == 0) 
+	} else if (strcmp(parse->lookahead->token, "more_or_equal") == 0) {
 		match("more_or_equal");
-	else if (strcmp(parse->lookahead->token, "and&&") == 0) 
-		match("and&&");
-	else if (strcmp(parse->lookahead->token, "or||") == 0)
-		match("or||");
-	else if (strcmp(parse->lookahead->token, "xor") == 0)
-		match("xor");
-	else if (strcmp(parse->lookahead->token, "and") == 0)
+	} else if (strcmp(parse->lookahead->token, "and") == 0) {
 		match("and");
-	else if (strcmp(parse->lookahead->token, "or") == 0)
+	} else if (strcmp(parse->lookahead->token, "xor") == 0) {
+		match("xor");
+	} else if (strcmp(parse->lookahead->token, "or") == 0) {
 		match("or");
-	 /*else {
+	} else {
 		printf("error: %d:%d: expecting condition, find %s\n",
 		       parse->lookahead->row, parse->lookahead->column, parse->lookahead->token);
 		exit(1);
-	}*/
+	}
 }
 
 void While(struct AST * StartNode) {
@@ -724,37 +596,6 @@ void While(struct AST * StartNode) {
 	match("close");
 	StList(StartNode);
 }
-
-/*void dowhile(struct AST* StartNode) {
-	if (strcmp(parse->lookahead->token, "do") == 0) {
-		struct AST *doNode = initASTNode();
-		setString(doNode, "do");
-		add_child(doNode, StartNode);
-		match("do");
-
-		struct AST *stmNode = initASTNode();
-		setString(stmNode, "bodyDo");
-		add_child(stmNode, doNode);
-
-		StList(stmNode);
-
-		struct AST *whileNode = initASTNode();
-		setString(whileNode, "while");
-		add_child(whileNode, doNode);
-		match("while");
-
-		struct AST *exprNode = initASTNode();
-		setString(exprNode, "expr");
-		add_child(exprNode, whileNode);
-
-		expression(exprNode);
-		match("semi");
-	} else {
-		printf("error: %d:%d: expecting do, find %s\n",
-		       parse->lookahead->row, parse->lookahead->column, parse->lookahead->token);
-		exit(1);
-	}
-}*/
 
 void match(char* x) {
 	if (strcmp(parse->lookahead->token, x) == 0) {

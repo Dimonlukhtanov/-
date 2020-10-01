@@ -12,6 +12,7 @@ struct AST {
     struct child* children;
     int idNode;
     int type;
+    char *value;
     struct Id_Table* table;
 };
 

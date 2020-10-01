@@ -25,7 +25,7 @@ void print(struct AST *node);
 void initi(struct AST* node);
 void varorarr(struct AST* node);
 void litornum(struct AST* node);
-void type();
+void type(struct AST* node);
 void term(struct AST* node);
 void add_prior1(struct AST* node);
 void add_prior2(struct AST* node);
@@ -47,7 +47,6 @@ void first_prior_expr1(struct AST* node);
 void first_prior_expr2(struct AST* node);
 void group_expr (struct AST* node);
 void condition(struct AST* node);
-void dowhile(struct AST* StartNode);
 void While(struct AST* StartNode);
 
 void match(char* x);

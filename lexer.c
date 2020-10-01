@@ -239,11 +239,14 @@ tokens *ident(int argc, char const *argv) {
 			continue;
 		}
 		//игнор пробелов
-		else if (sign == ' ') {
+		else if (sign == ' '/* || sign == '	'*/) {
 			if (i == 0) {
 				column++;
 				continue;
-			}
+			} /*else if (i == 3){
+				column+=4;
+				continue;
+			}*/
 
 			buf[i] = '\0';
 
