@@ -1,6 +1,6 @@
 Компиляция: make 
 #
-lexer: make test or make badtest
+lexer: make test
 #
 parser(AST): make ast
 # 
